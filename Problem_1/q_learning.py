@@ -1,0 +1,170 @@
+import pickle
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+
+from utils import generate_problem, visualize_value_function
+
+def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
+    assert X.ndim == 2 and U.ndim == 2 and Xp.ndim == 2
+    sdim, adim = X.shape[-1], U.shape[-1]
+
+    def loss():
+        batch_n = int(1e4)
+        ridx = torch.randint(0, X.shape[0], (batch_n,))
+        X_, U_, Xp_ = [z[ridx] for z in [X, U, Xp]]
+
+        U_all = torch.arange(4, dtype=torch.float32).view(1, -1, 1).repeat(batch_n, 1, 1)
+        Xp_all = Xp_.unsqueeze(1).repeat(1, 4, 1)
+        U_all = U_all.view(-1, 1)
+        Xp_all = Xp_all.view(-1, sdim)
+        input = torch.cat([Xp_all, U_all], dim=-1)
+        next_Q = torch.max(Q_network(input).view(-1, 4), dim=-1)[0]
+
+        input = torch.cat([X_, U_], dim=-1)
+        Q = Q_network(input).view(-1)
+
+        ######### Your code starts here #########
+        # compute the loss
+
+        # given the current (Q) and the optimal next state Q function (Q_next), 
+        # compute the Q-learning loss
+
+        # make sure to account for the reward, the terminal state and the
+        # discount factor gam
+
+        ######### Your code ends here ###########
+
+        # need to regularize the Q-value, because we're training its difference
+        l = l + 1e-3 * torch.mean(Q ** 2)
+        return l
+
+    ######### Your code starts here #########
+    # create the Adam optimizer with pytorch 
+    # experiment with different learning rates [1e-4, 1e-3, 1e-2, 1e-1]
+
+
+    ######### Your code ends here ###########
+
+    print("Training the Q-network")
+    for _ in tqdm(range(int(1e4))):
+        ######### Your code starts here #########
+        # apply a single step of gradient descent to the Q_network variables
+        # take a look at the torch.optim module
+        pass # Remove this line
+
+        ######### Your code ends here ###########
+
+# Q-learning ##################################################################
+def main():
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    problem = generate_problem()
+    n = problem["n"]
+    sdim, adim = n * n, 1
+    Ts = problem["Ts"]  # Transition matrices
+    idx2pos = torch.tensor(problem["idx2pos"], dtype=torch.float32)
+
+    # Sample state-action triples
+    samp_nb = int(1e5)
+    try:
+        with open("state_transitions.pkl", "rb") as fp:
+            temp = pickle.load(fp)
+            X, U, Xp = [torch.tensor(z, dtype=torch.float32) for z in temp]
+    except FileNotFoundError:
+        X = torch.randint(0, sdim, (samp_nb,))
+        U = torch.randint(0, 4, (samp_nb,))
+        x_list, u_list, xp_list = [], [], []
+        print("Sampling state transitions")
+        for i in tqdm(range(samp_nb)):
+            x = X[i]
+            u = U[i]
+            ######### Your code starts here #########
+            # x is the integer state index in the vectorized state shape: []
+            # u is the integer action shape: []
+            # compute xp, the integer next state shape: []
+
+            # Hints: 
+            # 1. make use of the transition matrices and torch.multinomial
+            # 2. remember that transition matrices have a shape [sdim, sdim]
+            # 3. remember that torch.multinomial takes in the probabilities, not the log-probabilities
+            # 4. torch.squeeze() can be used to reduce a dimension of the tensor
+
+            ######### Your code ends here ###########
+
+            # convert integer states to a 2D representation using idx2pos
+            xp = torch.tensor(idx2pos[xp])
+            x_list.append(idx2pos[x].tolist())
+            u_list.append([float(u)])
+            xp_list.append(xp.tolist())
+
+        X, U, Xp = torch.tensor(x_list), torch.tensor(u_list), torch.tensor(xp_list)
+        with open("state_transitions.pkl", "wb") as fp:
+            pickle.dump((X.numpy(), U.numpy(), Xp.numpy()), fp)
+
+    # define the reward ####################################
+    reward_vec = np.zeros([sdim])
+    reward_vec[problem["pos2idx"][(19, 9)]] = 1.0
+    reward_vec = torch.tensor(reward_vec, dtype=torch.float32)
+
+    def reward_fn(X, U):
+        return (X == torch.tensor([19.0, 9.0])).all(dim=-1).float()
+
+    def is_terminal_fn(X):
+        return (X == torch.tensor([19.0, 9.0])).all(dim=-1)
+
+    ######### Your code starts here #########
+    # create the deep Q-network using torch.nn
+    # it needs to take in 2 state + 1 action input (3 inputs)
+    # it needs to output a single value (batch x 1 output) - the Q-value
+    # it should have 3 dense layers () with a width of 64 (two hidden 64 neuron embeddings)
+
+
+    ######### Your code ends here ###########
+    Q_network = QNetwork().to(device)
+
+    # Train the Q-network
+    gam = 0.95
+    Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam)
+
+    ########################################################
+
+    # Visualize the Q-network
+    # y, x = [torch.arange(n).view(-1).float() for _ in np.meshgrid(np.arange(n), np.arange(n))]
+    # X_ = torch.arange(n * n)
+    # X_ = torch.stack([x[X_], y[X_]], dim=-1).unsqueeze(1).repeat(1, 4, 1)
+
+    # U_ = torch.arange(4).view(1, -1, 1).repeat(sdim, 1, 1).float()
+    # X_, U_ = X_.view(-1, 2), U_.view(-1, 1)
+    # q_input = torch.cat([X_, U_], dim=-1)
+    # V = torch.max(Q_network(q_input).view(-1, 4), dim=-1)[0]
+
+    y, x = [
+        torch.tensor(z, dtype=torch.float32, device=device).reshape(-1)
+        for z in np.meshgrid(np.arange(n), np.arange(n))
+    ]
+    X_ = torch.arange(n * n, device=device)
+    X_ = torch.stack([x[X_], y[X_]], -1).unsqueeze(1).repeat(1, 4, 1)
+
+    U_ = torch.arange(4, dtype=torch.float32, device=device).view(1, -1, 1).repeat(sdim, 1, 1)
+    X_, U_ = X_.reshape(-1, 2), U_.reshape(-1, 1)
+    q_input = torch.cat([X_, U_], -1)
+
+    with torch.no_grad():
+        Q = Q_network(q_input).reshape(-1, 4)
+        V = Q.max(-1)[0]
+
+    # Visualize the result
+    plt.figure(120)
+    visualize_value_function(V.cpu().numpy().reshape((n, n)))
+    plt.colorbar()
+    plt.show()
+
+    # Build binary heatmap
+
+
+if __name__ == "__main__":
+    main()
