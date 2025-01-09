@@ -4,6 +4,8 @@ import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def map_chunked(fn, chunk_size, n, verbose=False):
     """
     Map a function over iterates in chunks to save memory.
@@ -127,6 +129,6 @@ def generate_problem():
 
     Ts, pos2idx, idx2pos = make_transition_matrices(m, n, x_eye, sig)
 
-    Ts = [torch.tensor(T, dtype=torch.float32) for T in Ts]
+    Ts = [torch.tensor(T, dtype=torch.float32, device = device) for T in Ts]
     Problem = dict(Ts=Ts, n=n, m=m, pos2idx=pos2idx, idx2pos=idx2pos)
     return Problem

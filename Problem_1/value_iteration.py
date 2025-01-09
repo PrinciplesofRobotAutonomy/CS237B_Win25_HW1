@@ -8,7 +8,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 def value_iteration(problem, reward, terminal_mask, gam):
-    Ts = [T.detach().clone().to(device) for T in problem["Ts"]]
+    Ts = problem["Ts"]
     sdim, adim = Ts[0].shape[-1], len(Ts)  # state and action dimension
     V = torch.zeros([sdim], device = device)
 
