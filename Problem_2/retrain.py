@@ -17,9 +17,18 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 def get_bottleneck_dataset(model, img_dir):
-    transform = transforms.Compose([])
+    transform = transforms.Compose([
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
 
     ######### Your code starts here #########
+    # Create the train dataset using the ImageDataset class in utils.py 
+    # Pass in the img_directory, the LABELS and teh transform
+    # Define the dataloader wrapper and batch_size to 1 and shuffle to False
+
     train_dataset = ...
     train_dataloader = ...
 
@@ -33,11 +42,12 @@ def get_bottleneck_dataset(model, img_dir):
     for image, label, _ in train_dataloader:
         if image is None:
             continue
-        image = image.to(device).permute(0, 3, 1, 2)
+        image = image.to(device)
 
 
         ######### Your code starts here #########
-
+        # Get the predicted output from the model
+        # Store the prediction and labels in bottleneck_x_l and bottleneck_y_l respectively
 
         ######### Your code ends here ###########
 
@@ -53,7 +63,7 @@ def get_bottleneck_dataset(model, img_dir):
 
 def retrain(image_dir):
     # Create the base model from the pre-trained model InceptionV3
-    base_model = models.inception_v3(weights = Inception_V3_Weights.DEFAULT, transform_input=False)
+    base_model = torch.hub.load('pytorch/vision:v0.10.0', 'inception_v3', pretrained=True)
     base_model.fc = nn.Identity()  # Remove the last fully-connected layer
     base_model.to(device)
     base_model.eval()
@@ -63,7 +73,7 @@ def retrain(image_dir):
         bottleneck_train_ds, batch_size=BATCH_SIZE, shuffle=True,
     )
 
-    print("Done generating Bottleneck Dataset")
+    print(f"Done generating Bottleneck Dataset (len = {num_train})")
     
     ######### Your code starts here #########
     # We want to create a linear classifier which takes the bottleneck data as input
@@ -77,40 +87,40 @@ def retrain(image_dir):
     # 3. Define a loss function and a optimization scheme
 
 
+    ######### Your code ends here #########
     ########################### Training Loop #######################################
     writer = SummaryWriter("logs")  # Initialize TensorBoard
     EPOCHS = 1000 # Feel free to adjust this to obtain a lower loss
-    STEPS_PER_EPOCH = 50  # Number of steps per epoch
 
     print("Begin Training...")
 
     retrain_model.train()
     for epoch in range(EPOCHS):
         running_loss = 0.0
-        step = 0
-        while step < STEPS_PER_EPOCH:
-            for i, (bottleneck_inputs, labels) in enumerate(train_dataloader, 0):
-                if step >= STEPS_PER_EPOCH:
-                    break
 
-                bottleneck_inputs = bottleneck_inputs.to(device)
-                labels = labels.squeeze().to(device)  # Keep labels as integers
-                ######### Your code starts here #########
-                # Perform the training loop
-                # Zero out the gradients
-                # Get the retrain_model outputs from the bottleneck_input data
-                # Compute the loss, backpropagate and update the weights
+        steps = 0
 
+        for _, (bottleneck_inputs, labels) in enumerate(train_dataloader):
+
+            bottleneck_inputs = bottleneck_inputs.to(device)
+            labels = labels.squeeze().to(device)  # Keep labels as integers
+            ######### Your code starts here #########
+            # Perform the training loop
+            # Zero out the gradients
+            # Get the retrain_model outputs from the bottleneck_input data
+            # Compute the loss, backpropagate and update the weights
 
 
-                ######### Your code ends here #########
 
-                running_loss += loss_val.item()
-                step += 1
+            ######### Your code ends here #########
+
+            running_loss += loss_val.item()
+            steps += 1
 
         if epoch % (EPOCHS // 10) == 0:
-            print(f"Epoch: {epoch}, Avg loss: {running_loss / STEPS_PER_EPOCH:.4f}")
-            writer.add_scalar("Loss/train", running_loss / STEPS_PER_EPOCH, epoch)
+            print(f"Epoch: {epoch}, Avg loss: {running_loss / steps:.4f}")
+
+        writer.add_scalar("Loss/train", running_loss / steps, epoch)
 
     writer.close()  # Close TensorBoard writer
 
@@ -119,7 +129,7 @@ def retrain(image_dir):
     # Create a combined model using nn.Sequential 
     # that combines the base_model and retrain_model
     
-
+ 
     ######### Your code ends here #########        
 
     print("Saving model...")
