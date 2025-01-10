@@ -3,6 +3,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
+import torch
 
 IMG_SIZE = 299
 LABELS = ["cat", "dog", "neg"]
@@ -31,6 +32,9 @@ class ImageDataset(Dataset):
 
         if self.transform:
             image = self.transform(image)
+
+        image = torch.tensor(np.array(image), dtype=torch.float32)  # Convert to tensor and permute
+        label = torch.tensor(label, dtype=torch.long)  # Convert label to tensor
         return image, label, img_path
 
 def maybe_makedirs(path_to_create):
