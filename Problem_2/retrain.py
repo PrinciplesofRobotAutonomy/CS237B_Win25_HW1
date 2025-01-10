@@ -6,7 +6,6 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import transforms, models
 from torchvision.models import Inception_V3_Weights
-# from PIL import Image
 from utils import *
 from torch.utils.tensorboard import SummaryWriter
 
