@@ -75,33 +75,7 @@ def compute_and_plot_saliency(model, image_path):
     if raw_image is None:
         return None
 
-    img = normalize_resize_image(raw_image, IMG_SIZE)
-    img = torch.tensor(img, dtype=torch.float32, device=device).permute(2, 0, 1).unsqueeze(0) #convert to tensor, move to device, and transpose
-    img.requires_grad_(True)
 
-    logits = model(img)
-    top_class = torch.argmax(torch.squeeze(logits))
-    
-    # Compute the gradient of the top class logit with respect to the input image
-    grads = torch.autograd.grad(logits[0, top_class], img, retain_graph=True)[0]
-
-    # Reshape the gradients to match the image dimensions
-    grads = torch.squeeze(grads)
-
-    # Handle potential multi-channel gradients (e.g., RGB)
-    if grads.shape[0] > 1:
-        grads = torch.max(grads, dim=0)[0]
-
-    # Create the saliency map by taking the absolute value of the gradients
-    M = torch.abs(grads)
-
-    plt.subplot(2, 1, 1)
-    plt.imshow(M.cpu().detach().numpy())
-    plt.title("Saliency with respect to predicted class %s" % LABELS[top_class])
-    plt.subplot(2, 1, 2)
-    plt.imshow(decode_jpeg(image_path))
-    plt.savefig("../plots/saliency.png")
-    plt.show()
 
 def plot_classification(image_path, classification_array):
     if classification_array is None:
