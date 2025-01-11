@@ -1,7 +1,9 @@
 import pickle
-import torch
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
 from tqdm import tqdm
 
 from utils import generate_problem, visualize_value_function
@@ -15,18 +17,18 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
 
     def loss():
         batch_n = int(1e4)
-        ridx = torch.randint(0, X.shape[0], (batch_n,))
-        X_, U_, Xp_ = [z[ridx] for z in [X, U, Xp]]
+        ridx = torch.randint(0, X.shape[0], (batch_n,), device=device)
+        X_, U_, Xp_ = X[ridx], U[ridx], Xp[ridx]
 
-        U_all = torch.arange(4, dtype=torch.float32).view(1, -1, 1).repeat(batch_n, 1, 1)
+        U_all = torch.arange(4, dtype=torch.float32, device=device).view(1, -1, 1).repeat(batch_n, 1, 1)
         Xp_all = Xp_.unsqueeze(1).repeat(1, 4, 1)
-        U_all = U_all.view(-1, 1)
-        Xp_all = Xp_all.view(-1, sdim)
-        input = torch.cat([Xp_all, U_all], dim=-1)
-        next_Q = torch.max(Q_network(input).view(-1, 4), dim=-1)[0]
+        U_all = U_all.reshape(-1, 1)
+        Xp_all = Xp_all.reshape(-1, sdim)
+        input_next = torch.cat([Xp_all, U_all], -1)
+        next_Q = Q_network(input_next).reshape(batch_n, 4).max(-1)[0] 
 
-        input = torch.cat([X_, U_], dim=-1)
-        Q = Q_network(input).view(-1)
+        input_current = torch.cat([X_, U_], -1)
+        Q = Q_network(input_current).reshape(-1)
 
         ######### Your code starts here #########
         # given the current (Q) and the optimal next state Q function (Q_next), 
@@ -34,6 +36,9 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
 
         # make sure to account for the reward, the terminal state and the
         # discount factor gam
+
+
+
 
         ######### Your code ends here ###########
 
@@ -59,6 +64,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
 
 # Q-learning ##################################################################
 def main():
+    
     problem = generate_problem()
     n = problem["n"]
     sdim, adim = n * n, 1

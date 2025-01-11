@@ -63,7 +63,7 @@ def get_bottleneck_dataset(model, img_dir):
 
 def retrain(image_dir):
     # Create the base model from the pre-trained model InceptionV3
-    base_model = torch.hub.load('pytorch/vision:v0.10.0', 'inception_v3', pretrained=True)
+    base_model = torch.hub.load('pytorch/vision:v0.10.0', 'inception_v3', weights=Inception_V3_Weights.DEFAULT)
     base_model.fc = nn.Identity()  # Remove the last fully-connected layer
     base_model.to(device)
     base_model.eval()
@@ -88,6 +88,8 @@ def retrain(image_dir):
 
 
     ######### Your code ends here #########
+
+    
     ########################### Training Loop #######################################
     writer = SummaryWriter("logs")  # Initialize TensorBoard
     EPOCHS = 1000 # Feel free to adjust this to obtain a lower loss

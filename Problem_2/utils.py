@@ -51,6 +51,16 @@ def maybe_makedirs(path_to_create):
         if not os.path.isdir(path_to_create):
             raise
 
+def transform_img(img_path):
+    transform = transforms.Compose([
+        transforms.Resize(IMG_SIZE),
+        transforms.CenterCrop(IMG_SIZE),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+
+    image = Image.open(img_path).convert("RGB")    
+    return transform(image)
 
 def decode_jpeg(file_path):
      """Loads a JPEG image and returns a numpy array."""

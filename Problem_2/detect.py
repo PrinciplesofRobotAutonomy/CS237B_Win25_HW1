@@ -23,10 +23,13 @@ def compute_brute_force_classification(model, image_path, nH=8, nW=8):
                             of each label (cat, dog, neg)
     """
 
-    raw_image = decode_jpeg(image_path)
-    img = normalize_resize_image(raw_image, IMG_SIZE)
+    img = transform_img(image_path).to(device=device)
 
     ######### Your code starts here #########
+    # Find the dimensions of each grid window using IMG_SIZE and nH, nW
+    # Extract the window from the image with some amount of padding of your choice
+    # Reshape the window to fit the input dimensions of the model and get the predicted output
+    # Store the prediction in window_predictions and repeat across all number of windows
 
 
     ######### Your code ends here #########
@@ -40,9 +43,7 @@ def compute_convolutional_KxK_classification(model, image_path):
     :param image_path: Path to the image to be analyzed
     :return: KxK classification probabilities
     """
-    raw_image = decode_jpeg(image_path)  # Decoding the image
-    resized_patch = normalize_resize_image(raw_image, IMG_SIZE)  # Resize and normalize the image
-    input_tensor = torch.tensor(resized_patch, dtype=torch.float32, device = device).permute(2, 0, 1).unsqueeze(0)
+    img = transform_img(image_path).to(device=device).unsqueeze(0)
 
     base_model = model[0]
     classifier = model[1]
@@ -71,13 +72,8 @@ def compute_and_plot_saliency(model, image_path):
     :param image_path: Path to the image to be analysed
     :return: None
     """
-    raw_image = decode_jpeg(image_path)
-    if raw_image is None:
-        return None
-
-    img = normalize_resize_image(raw_image, IMG_SIZE)
-    img = torch.tensor(img, dtype=torch.float32, device=device, requires_grad=True)
-    img = img.permute(2, 0, 1).unsqueeze(0)
+    img = transform_img(img_path=image_path).to(device=device).unsqueeze(0)
+    img.requires_grad_(True)
     
     ######### Your code starts here #########
 
@@ -104,7 +100,7 @@ def compute_and_plot_saliency(model, image_path):
     plt.savefig("../plots/saliency.png")
     plt.show()
 
-def plot_classification(image_path, classification_array):
+def plot_classification(image_path, classification_array, path):
     if classification_array is None:
        return
     nH, nW, _ = classification_array.shape
@@ -130,7 +126,7 @@ def plot_classification(image_path, classification_array):
     plt.colorbar()
     plt.subplot(2, 2, 4)
     plt.imshow(image_data)
-    plt.savefig("../plots/detect.png")
+    plt.savefig(path)
     plt.show()
 
 if __name__ == "__main__":
@@ -147,11 +143,13 @@ if __name__ == "__main__":
         plot_classification(
             FLAGS.image,
             compute_brute_force_classification(model, FLAGS.image, 8, 8),
+            "../plots/brute.png"
         )
     elif FLAGS.scheme == "conv":
         plot_classification(
             FLAGS.image,
             compute_convolutional_KxK_classification(model, FLAGS.image),
+            "../plots/saliency.png"
         )
     elif FLAGS.scheme == "saliency":
        compute_and_plot_saliency(model, FLAGS.image)

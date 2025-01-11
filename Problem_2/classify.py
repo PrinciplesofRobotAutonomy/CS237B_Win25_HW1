@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     #Load the model
     model = torch.load('./trained_models/trained.pth').to(device)
-    model.eval() # Set the model to inference mode
+    model.eval()
     classify(model, FLAGS.test_image_dir, device)
 
 
