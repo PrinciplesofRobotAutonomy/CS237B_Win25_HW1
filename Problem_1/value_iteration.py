@@ -61,7 +61,5 @@ def main():
     plt.title("value iteration")
     plt.show()
 
-    # Policy Extraction
-
 if __name__ == "__main__":
     main()
