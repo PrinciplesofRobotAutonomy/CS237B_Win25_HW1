@@ -29,8 +29,6 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
         Q = Q_network(input).view(-1)
 
         ######### Your code starts here #########
-        # compute the loss
-
         # given the current (Q) and the optimal next state Q function (Q_next), 
         # compute the Q-learning loss
 
@@ -132,15 +130,6 @@ def main():
     ########################################################
 
     # Visualize the Q-network
-    # y, x = [torch.arange(n).view(-1).float() for _ in np.meshgrid(np.arange(n), np.arange(n))]
-    # X_ = torch.arange(n * n)
-    # X_ = torch.stack([x[X_], y[X_]], dim=-1).unsqueeze(1).repeat(1, 4, 1)
-
-    # U_ = torch.arange(4).view(1, -1, 1).repeat(sdim, 1, 1).float()
-    # X_, U_ = X_.view(-1, 2), U_.view(-1, 1)
-    # q_input = torch.cat([X_, U_], dim=-1)
-    # V = torch.max(Q_network(q_input).view(-1, 4), dim=-1)[0]
-
     y, x = [
         torch.tensor(z, dtype=torch.float32, device=device).reshape(-1)
         for z in np.meshgrid(np.arange(n), np.arange(n))
