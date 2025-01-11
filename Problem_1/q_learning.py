@@ -6,6 +6,9 @@ from tqdm import tqdm
 
 from utils import generate_problem, visualize_value_function
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
 def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
     assert X.ndim == 2 and U.ndim == 2 and Xp.ndim == 2
     sdim, adim = X.shape[-1], U.shape[-1]
@@ -58,10 +61,6 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
 
 # Q-learning ##################################################################
 def main():
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
-
     problem = generate_problem()
     n = problem["n"]
     sdim, adim = n * n, 1
@@ -162,8 +161,6 @@ def main():
     visualize_value_function(V.cpu().numpy().reshape((n, n)))
     plt.colorbar()
     plt.show()
-
-    # Build binary heatmap
 
 
 if __name__ == "__main__":
