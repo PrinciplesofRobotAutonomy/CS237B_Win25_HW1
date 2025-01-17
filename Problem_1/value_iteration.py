@@ -50,13 +50,15 @@ def main():
     # generate the reward vector
     reward = np.zeros([sdim, 4])
     reward[problem["pos2idx"][19, 9], :] = 1.0
-    reward = torch.tensor(reward, dtype=torch.float32)
+    reward = torch.tensor(reward, dtype=torch.float32, device = device)
 
     gam = 0.95
     V_opt = value_iteration(problem, reward, terminal_mask, gam)
 
     # Visualize the Value Function
     plt.figure(213)
+
+    # If device is gpu, use V_opt.cpu().numpy().reshape((n, n)) instead!
     visualize_value_function(V_opt.numpy().reshape((n, n)))
     plt.title("value iteration")
     plt.show()
